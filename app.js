@@ -1,12 +1,21 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
+const { unlink } = require('node:fs');
+const fs = require('fs');
+var jsdom = require('jsdom');
+const { JSDOM } = jsdom;
+const { window } = new JSDOM();
+const { document } = (new JSDOM('')).window;
+global.document = document;
+
+var $ = jQuery = require('jquery')(window);
 
 // Middleware para manejar cookies
 app.use((req, res, next) => {
   // Define tus cookies aquí, por ejemplo:
   const cookies = {
-    fluxSessionData: '2975gqvp0u0bnhlbl98567em43',
+    fluxSessionData: 'apa9nv5sjlvoq360oj6k82mjpk',
     // Agrega más cookies según sea necesario
   };
 
@@ -21,23 +30,208 @@ app.use((req, res, next) => {
 
 // Ruta para realizar la solicitud a google.com
 app.get('/shops', async (req, res) => {
+  headers = { Cookie: req.headers.cookie }
+  dataShops = []
+  let contenidoArchivo = leerArchivoShops();
+  dataShops = JSON.parse(contenidoArchivo);
+  console.log("empiez con rows: ", dataShops.length, contenidoArchivo.length)
+
   try {
     // Realiza la solicitud HTTP GET a google.com
-    const response = await axios.get('https://www.adventuresro.com/?module=vending&action=viewshop&id=37', {
-      headers: {
-        // Pasa las cookies en el encabezado de la solicitud
-        Cookie: req.headers.cookie,
-      },
+    const response = await axios.get('https://www.adventuresro.com/?module=vending', {
+      headers,
     });
 
-    // Devuelve la respuesta de google.com
-    res.send(response.data);
+    
+    let indices = $(response.data).find('.page-item').length
+    console.log("cantidad de pags: ", indices)
+    const shopPages = await getShopPages(indices);
+
+    res.send(shopPages);
   } catch (error) {
     // Maneja los errores aquí
     console.error(error);
     res.status(500).send('Error al realizar la solicitud.');
   }
 });
+
+app.get('/historico', async (req, res) => {
+  headers = { Cookie: req.headers.cookie }
+ 
+  try {
+    let responseData = [];
+    let historico = leerArchivoShops();
+    responseData = JSON.parse(historico) || [];
+  
+    console.log("historico rows: ", responseData.length)
+
+    res.send(responseData);
+  } catch (error) {
+    // Maneja los errores aquí
+    console.error(error);
+    res.status(500).send('Error al realizar la solicitud.');
+  }
+});
+
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function getShopPages(indices){
+  console.log("start - total paginas: ", indices)
+  let ids = "";
+  let tablaShop = [];
+
+    for (let i = 1; i <= 1; i++){
+       ids = await getPagesIds(i);
+      //  console.log("ids",ids)
+       tablaShop.push(ids)
+    }
+
+    console.log(tablaShop.length)
+    for (let i = 0; i < tablaShop.length; i++){
+      let tablita = tablaShop[i]
+      //console.log("tablita es: ", tablita)
+      for(let i = 0; i < tablita.length; i += 2){
+          let shopNum = $($(tablita[i])[0]).text()
+          console.log("sgop num es", shopNum)
+          if(shopNum){
+              await getShopItems(shopNum);
+              
+          }
+      }
+  }
+    
+
+    console.log("fin de ejecucion, guardo historico", dataShops.length, JSON.stringify(dataShops).length)
+    guardarArchivo(dataShops)
+    return dataShops;
+}
+
+async function getShopItems(shopNum){
+
+  // shopActual++;
+  // $('#titulo').text('Parseando shop: ' + shopNum + ' (' + shopActual + '/' + cantidadMaxShops +')')
+
+  await sleep(1000);
+
+  const response = await axios.get("https://www.adventuresro.com/?module=vending&action=viewshop&id=" + shopNum, {
+      headers,
+    });
+     
+          // localStorage.setItem('shops', response)
+          let shopsTemp = []
+          let shopName = "";
+          let shopCoords = "";
+
+          tabla = $(response.data).find('.horizontal-table tbody tr td')
+          shopName = $(response.data).find('h3').text()
+          
+          if(!shopName.includes('Zeny')) return
+          
+          shopCoords = $(response.data).find('h4').text()
+          let rowNum = tabla.length / 10
+          let base = 0
+
+          for(var i = 0; i < rowNum; i++){
+              let row = {}
+              
+              row.itemId = $(tabla[base + 0]).find('a').text();
+              row.itemName = $(tabla[base + 1]).find('a').text();
+              row.itemRefine = $.trim($(tabla[base + 2])[0].innerText);
+              row.itemSlot = $.trim($(tabla[base + 2])[0].innerText).replace('[','').replace(']','');
+              row.itemCard0 = $(tabla[base + 4]).find('span').text();
+              row.itemCard1 = $(tabla[base + 5]).find('span').text();
+              row.itemCard2 = $(tabla[base + 6]).find('span').text();
+              row.itemCard3 = $(tabla[base + 7]).find('span').text();
+              row.itemPrice = $.trim($(tabla[base + 8])[0].innerText).replace('z','').replace(' ','').replace(' ','');
+              row.itemAmount = $.trim($(tabla[base + 9])[0].innerText);
+              row.shopId = shopNum;
+              row.shopName = shopName;
+              row.shopCoords = shopCoords;
+
+              // shopsTemp.push(row)
+              // shops.push(row)
+              console.log("row",row)
+
+              //cookie
+              // let currentOnline = JSON.parse(localStorage.getItem('ultimosOnline'))
+              // currentOnline.push(row) 
+              // localStorage.setItem('ultimosOnline', JSON.stringify(currentOnline))
+              //cookie
+
+
+
+              actualizarHistorico(row)
+              base += 10
+          }
+
+}
+
+function actualizarHistorico(row){
+  let historico = dataShops || []
+
+    let item = historico.find( e => e.itemId == row.itemId)
+    diaHoy = new Date().getDate()
+    mesHoy = new Date().getMonth()
+
+
+    if(item){
+        let yaCargado = item.hisoricData.find(hd => hd.itemPrice == row.itemPrice && new Date(hd.fecha).getDate() == diaHoy && new Date(hd.fecha).getMonth() == mesHoy)
+        //  console.log("encontre!, ya fueron cargados?", yaCargado)
+        if(!yaCargado){
+            item.hisoricData.push({itemPrice: row.itemPrice, fecha: new Date()})
+        }
+    } else {
+        //  console.log("no encontre, pusheo historico")
+        historico.push({itemId: row.itemId, itemName: row.itemName, itemSlot: row.itemSlot, hisoricData: [{itemPrice: row.itemPrice, fecha: new Date()}]})
+    }
+
+    //localStorage.setItem('historico', JSON.stringify(historico))
+    dataShops = historico;
+}
+
+async function getPagesIds(index){
+  //console.log("page id", index)
+  let tablaShop;
+  await sleep(1000);
+
+
+    const resp = await axios.get("https://www.adventuresro.com/?module=vending&p=" + index, {
+      headers,
+    })
+    // console.log("resp es: ", resp.data)
+    let tablita = $(resp.data).find('.horizontal-table tbody tr td a')
+    
+    // tablaShop.push(tablita);
+    //console.log("resp",resp)
+  return tablita;
+}
+
+function guardarArchivo(data){
+  fs.writeFile('dataShops.txt', JSON.stringify(data), function (err) {
+    if (err) throw err;
+    console.log('Archivo de shops guardado correctamente');
+  });
+
+}
+
+function leerArchivoShops(){
+  // fs.readFile('dataShops.txt',
+  // function(err, data) {       
+  //     if (err) throw err;
+  //     // data is a buffer containing file content
+  //     let dataParsed = data.toString('utf8');
+  //     let objData = JSON.parse(dataParsed);
+  //     console.log("archivo leido", objData)
+  //     dataShop = objData;
+  // });
+
+  return fs.readFileSync('dataShops.txt', 'utf8');
+}
 
 app.get('/votar', async (req, res) => {
     let urls = [
