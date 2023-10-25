@@ -1,4 +1,5 @@
 shops = []
+historico = []
 tablaShop = []
 cantidadMinShops = 0
 cantidadMaxShops = 999
@@ -9,8 +10,8 @@ minutosProximoUpdate = 0;
 bossTimers = getBossTimers()
 
 
-let historico = localStorage.getItem('historico')
-if(!historico) localStorage.setItem('historico', '[]')
+// let historico = localStorage.getItem('historico')
+// if(!historico) localStorage.setItem('historico', '[]')
 
 function delay(time) {
     return new Promise(resolve => setTimeout(resolve, time/2));
@@ -101,7 +102,8 @@ function getBossTimers(){
 
 function compararHistorico(){
     $("#historicItemsComp > tbody").empty();
-    let datos = JSON.parse(localStorage.getItem('historico'))
+    // let datos = JSON.parse(localStorage.getItem('historico'))
+    let datos = historico;
     let itemsIgnorados = JSON.parse(localStorage.getItem('itemsIgnorados')) || []
     let coeficiente = $($('#coeficiente')[0])[0].value || 1
     let filtroMillones = $($('#filtroMillones')[0])[0].value || 0
@@ -466,12 +468,29 @@ function actualizarTiempo(){
 
 function comenzarBusquedaWebsite(){
     $('#updater').text('Actualizando ...')
-    $.get("https://www.adventuresro.com/?module=vending", function(data, status){
+//     $.get("https://www.adventuresro.com/?module=vending", function(data, status){
     
-    indices = $(data).find('.page-item').length
-    $('#titulo').text('Son ' + indices + ' paginas')
-    getShopPages(indices);
+//     indices = $(data).find('.page-item').length
+//     $('#titulo').text('Son ' + indices + ' paginas')
+//     getShopPages(indices);
+// });
+
+$.get("http://localhost:3000/historico", function(data, status){
+    console.log("llego historico", data)
+    historico = data;
+
+        $.get("http://localhost:3000/shops", function(data, status){
+        console.log("llego data", data)
+        shops = data;
+        compararHistorico();
+        $('#updater').text('Ultima actualizacion: ' + new Date().toGMTString())
+
+    });
 });
+
+
+
+
 }
 
 function addMinutes(date, minutes) {
