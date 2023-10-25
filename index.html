@@ -1,0 +1,129 @@
+<Html> <!-- This tag is compulsory for any HTML document. -->   
+<Head>  
+    <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+    <script src="./index.js"></script>
+    <style>
+        .esta-online {color:green;}
+        .esta-offline {color:red;}
+      </style>
+</Head>  
+<Body>  
+    <h1 id="titulo">Hola! Voy a buscar los shops xd</h1>
+    <h1 id="updater" style="margin-left: 50%">Proximo update en: 00 minutos</h1>
+    <h2 id="cantidadShops">Iniciar busqueda para conocer la cantidad de shops</h2>
+    <br>
+    <div style="display: flex; flex-direction: row; flex-wrap: nowrap; align-content: center; justify-content: space-evenly; align-items: flex-start;" id="tablas">
+        <div>
+            <div>
+                <button onclick="buscarShopsWebsite()" id="busqueda">Buscar</button>
+                <button onclick="cargarTabla()" id="cargarTabla">Cargar tabla</button>
+                <input id="filtro" placeholder="Item contiene..."></input>
+                <button onclick="filtrarBusqueda()" id="filtrar">Filtrar</button>
+            </div>
+            <table id="items">
+                <thead>
+                    <tr style="height: 20px;">
+                        <th>Item ID</th>
+                        <th>Item Name</th>
+                        <th>Price</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <div>
+                <input type="file" id="file-input-mvp" />
+                <button onclick="buscarMVPs()" id="busquedaMvp">Buscar MVPs</button>
+            </div>
+            <table id="mvps">
+                <thead>
+                    <tr style="height: 20px;">
+                        <th>MVP</th>
+                        <th>Mapa</th>
+                        <th>Vivo?</th>
+                        <th>Ultima muerte</th>
+                        <th>Proxima muerte min.</th>
+                        <th>Proxima muerte max.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <pre style="max-width: 50px;" id="file-content-mvp"></pre>
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <div>
+                <button id="cargarHistorico" onclick="cargarHistorico()">Cargar historico</button>
+                <input id="filtroHistorico" placeholder="Item contiene..."></input>
+                <input id="fechaFiltroHistorico" placeholder="Fecha mayor a..."></input>
+                <button onclick="filtrarHistorico()" id="filtrarHistorico">Filtrar</button>
+            </div>
+            <table id="historicItems">
+                <thead>
+                    <tr style="height: 20px;">
+                        <th>Item ID</th>
+                        <th>Item Name</th>
+                        <th>Price</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <div>
+                <input id="coeficiente" placeholder="Coeficiente para comparar"></input>
+                <input id="filtroMillones" placeholder="Millones para comparar"></input>
+                <input id="fechaFiltroCompHistorico" placeholder="Fecha mayor a..."></input>
+                <input id="textoFiltroCompHistorico" placeholder="Item contiene..."></input>
+                <button id="compararHistorico" onclick="compararHistorico()">Comparar historico</button>
+            </div>
+            <table id="historicItemsComp">
+                <thead>
+                    <tr style="height: 20px;">
+                        <th>Item ID</th>
+                        <th>Item Name</th>
+                        <th>Min. Price</th>
+                        <th>Min. Date</th>
+                        <th>Max. Price</th>
+                        <th>Max. Date</th>
+                        <th>Coef.</th>
+                        <th>AVG Coef.</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <input type="file" id="file-input" />
+            <h3>Contents of the file:</h3>
+            <pre style="max-width: 50px;" id="file-content"></pre>
+            <!-- <div>
+                <input id="fechaFiltroNuevos" placeholder="Fecha mayor a..."></input>
+                <input id="textoFiltroNuevos" placeholder="Item contiene..."></input>
+                <button id="filtrarNuevosItems" onclick="filtrarNuevosItems()">Filtrar</button>
+            </div>
+            <table id="nuevosItems">
+                <thead>
+                    <tr style="height: 20px;">
+                        <th>Item ID</th>
+                        <th>Item Name</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table> -->
+        </div>
+    </div>
+</Body>  
+</Html>
