@@ -15,7 +15,7 @@ var $ = jQuery = require('jquery')(window);
 app.use((req, res, next) => {
   // Define tus cookies aquí, por ejemplo:
   const cookies = {
-    fluxSessionData: 'apa9nv5sjlvoq360oj6k82mjpk',
+    fluxSessionData: '0c6j7p5lf7h4kppm7rs9i672cp',
     // Agrega más cookies según sea necesario
   };
 
@@ -32,7 +32,7 @@ app.use((req, res, next) => {
 app.get('/shops', async (req, res) => {
   headers = { Cookie: req.headers.cookie }
   dataShops = []
-  let contenidoArchivo = leerArchivoShops();
+  let contenidoArchivo = leerArchivoShops() || "[]";
   dataShops = JSON.parse(contenidoArchivo);
   console.log("empiez con rows: ", dataShops.length, contenidoArchivo.length)
 
@@ -45,9 +45,12 @@ app.get('/shops', async (req, res) => {
     
     let indices = $(response.data).find('.page-item').length
     console.log("cantidad de pags: ", indices)
+    if(indices == 0){
+      res.status(500).send("token vencido");
+    }
     const shopPages = await getShopPages(indices);
 
-    res.send(shopPages);
+    res.status(200).send(shopPages);
   } catch (error) {
     // Maneja los errores aquí
     console.error(error);
@@ -65,7 +68,7 @@ app.get('/historico', async (req, res) => {
   
     console.log("historico rows: ", responseData.length)
 
-    res.send(responseData);
+    res.status(200).send(responseData);
   } catch (error) {
     // Maneja los errores aquí
     console.error(error);
@@ -84,8 +87,9 @@ async function getShopPages(indices){
   console.log("start - total paginas: ", indices)
   let ids = "";
   let tablaShop = [];
+  let currentOnline = [];
 
-    for (let i = 1; i <= 1; i++){
+    for (let i = 1; i <= indices; i++){
        ids = await getPagesIds(i);
       //  console.log("ids",ids)
        tablaShop.push(ids)
@@ -97,9 +101,9 @@ async function getShopPages(indices){
       //console.log("tablita es: ", tablita)
       for(let i = 0; i < tablita.length; i += 2){
           let shopNum = $($(tablita[i])[0]).text()
-          console.log("sgop num es", shopNum)
+          console.log("shop num es", shopNum)
           if(shopNum){
-              await getShopItems(shopNum);
+              await getShopItems(shopNum,currentOnline);
               
           }
       }
@@ -108,10 +112,10 @@ async function getShopPages(indices){
 
     console.log("fin de ejecucion, guardo historico", dataShops.length, JSON.stringify(dataShops).length)
     guardarArchivo(dataShops)
-    return dataShops;
+    return currentOnline;
 }
 
-async function getShopItems(shopNum){
+async function getShopItems(shopNum,currentOnline){
 
   // shopActual++;
   // $('#titulo').text('Parseando shop: ' + shopNum + ' (' + shopActual + '/' + cantidadMaxShops +')')
@@ -141,25 +145,27 @@ async function getShopItems(shopNum){
               
               row.itemId = $(tabla[base + 0]).find('a').text();
               row.itemName = $(tabla[base + 1]).find('a').text();
-              row.itemRefine = $.trim($(tabla[base + 2])[0].innerText);
-              row.itemSlot = $.trim($(tabla[base + 2])[0].innerText).replace('[','').replace(']','');
+              row.itemRefine = $.trim($(tabla[base + 2]).text());
+              row.itemSlot = $.trim($(tabla[base + 2]).text()).replace('[','').replace(']','');
               row.itemCard0 = $(tabla[base + 4]).find('span').text();
               row.itemCard1 = $(tabla[base + 5]).find('span').text();
               row.itemCard2 = $(tabla[base + 6]).find('span').text();
               row.itemCard3 = $(tabla[base + 7]).find('span').text();
-              row.itemPrice = $.trim($(tabla[base + 8])[0].innerText).replace('z','').replace(' ','').replace(' ','');
-              row.itemAmount = $.trim($(tabla[base + 9])[0].innerText);
+              row.itemPrice = $.trim($(tabla[base + 8]).text()).replace('z','').replace(' ','').replace(' ','');
+              row.itemAmount = $.trim($(tabla[base + 9]).text());
               row.shopId = shopNum;
               row.shopName = shopName;
               row.shopCoords = shopCoords;
+              // console.log(row.itemPrice, row)
 
               // shopsTemp.push(row)
               // shops.push(row)
-              console.log("row",row)
+              // console.log("row",row)
 
               //cookie
               // let currentOnline = JSON.parse(localStorage.getItem('ultimosOnline'))
-              // currentOnline.push(row) 
+              // console.log("currOn", currentOnline?.length)
+               currentOnline.push(row) 
               // localStorage.setItem('ultimosOnline', JSON.stringify(currentOnline))
               //cookie
 
@@ -334,4 +340,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor en ejecución en el puerto ${PORT}`);
 });
-
